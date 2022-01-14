@@ -1,6 +1,8 @@
 import sys 
 
 ADDRESS_COUNT = 0x02
+RESERV_WORDS = ["if","else","while"]
+
 def checkAddresCount():
     global ADDRESS_COUNT
     if(ADDRESS_COUNT == 254):
@@ -60,9 +62,47 @@ class Plus:
 
             
 class Iff:
-    def getAsm():
-        pass
+    def getTable(statement,beginIf,endIf,beginElse,endElse):
+        out = {"IFBEGIN":beginIf,"IFEND":endIf,"ELSEBEGIN":beginElse,"ELSEEND":endElse,"STATEMENT":statement}
+        return out
 
+    def searchInfo(program):
+        out = [0,0,0,0] #IfBegin , IfEnd , ElseBegin, ElseEnd
+        stack = []
+        res = []
+        for l in range(len(program)):
+            if('{' in program[l]):
+                stack.append(program[l])
+
+            elif('}' in program[l]):
+                res.append([stack.pop(),l])
+        print(stack)
+        print(res)
+        stack = []
+        res = []
+        print("---------------")
+        for l in range(len(program)):
+            if('if' in program[l]):
+                stack.append(program[l])
+
+            elif('else' in program[l]):
+                res.append([stack.pop(),l])
+        print(stack)
+        print(res)
+        return out
+                
+
+
+
+            
+
+def createStateTable(code):
+    x = 0
+    table = {}
+    Iff.searchInfo(code)
+    return table
+    
+    
 
 
 
@@ -88,46 +128,71 @@ def createSymbolTable(code):
                 table[l[0]] = Equal.getTable(1,l[2:],"MATH")
             else:
                 table[l[0]] = Equal.getTable(1,l[2:],"DECL")
-
     return table
 
-            
 
+def handleKeyWords(line):
+    line = line + '('
+    banned = ['(',')']
+    out = []
+    word = ""
+    
+
+    for i in line:
+        if(i not in banned):
+            word = word + i
+        else:
+            out.append(word)
+            word = ""
+    if("if" in line):
+        out[0] = out[0].replace(' ','')
+    if("else" in line):
+        out = ["else","{"]
+    return out
 
 
 def readFile(filePath):
+    global RESERV_WORDS
     code = open(filePath,'r')
     program = code.read()
     program = program.split('\n')
     code.close()
     for x in range(len(program)):
-        program[x] = program[x].split(' ')
-        while(' ' in program[x]):
-            blank = program[x].index(' ')
-            program[x].pop(blank)
-        while('' in program[x]):
-            blank = program[x].index('')
-            program[x].pop(blank)
-        print(program[x])
+        reservFlag = not(any(check in program[x] for check in RESERV_WORDS))
+        if reservFlag:
+            program[x] = program[x].split(' ')
+            while(' ' in program[x]):
+                blank = program[x].index(' ')
+                program[x].pop(blank)
+            while('' in program[x]):
+                blank = program[x].index('')
+                program[x].pop(blank)
+        else:
+            program[x] = handleKeyWords(program[x])
     return program
 
 def parseCode(code,table):
     for l in code:
-        if('=' in l):
-            Equal.getAsm(table,table[l[0]],l[0])
+        pass
+        
 
 
 
 def assemblyCode():
-    program = readFile("test.miau")
+    program = readFile("foo.miau")
     symTable = createSymbolTable(program)
+    stateTable = createStateTable(program)
+
     parseCode(program,symTable)
+#    for i in symTable:
+#        print(i,symTable[i])
+
 
 
 
 if __name__ == "__main__":
+    #TODO #1  Create a proper command line for the compiler
     assemblyCode()
-
 
 
 

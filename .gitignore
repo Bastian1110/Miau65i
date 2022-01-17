@@ -1,2 +1,4 @@
 *.s
 *.miau
+vasm6502_oldstyle/
+*.out

@@ -47,7 +47,7 @@ class Equal:
         else:
             if('+' in value):
                 Plus.getAsm(table,value[0],value[2])
-                print("  sty $" + table[name]["ADDRESS"] + "      ; " + data[1])
+                print("  sty $" + table[name]["ADDRESS"] + "      ; " + name)
                 print("  sta $" + table[name]["ADDRESS"]+ " + 1\n")
 
 class Plus:
@@ -108,14 +108,17 @@ class Boolean:
 
             
 class Iff:
-    def getTable(statement,begin,end):
-        return {"IFBEGIN":begin,"IFEND":end,"STATEMENT":statement}
-    def getAsm(code,tableSym,tableFlow,labelCounter):
+    def getTable(statement,begin,end,elsee):
+        return {"IFBEGIN":begin,"IFEND":end,"STATEMENT":statement,"ELSEKEY" : elsee}
+    def getAsm(code,tableSym,tableFlow,labelCounter,elsee):
         statement = Boolean.getAsm(tableSym,tableFlow["IF"+str(labelCounter)]["STATEMENT"])
-        if(statement[1] == '>'):
-            print("  bpl IF"+str(labelCounter))
-            print("")
-            print("ELSE0:")
+        if(elsee):
+            if(statement[1] == '>'):
+                print("  bpl IF"+str(labelCounter))
+                print("")
+        else:
+            if(statement[1] == '>'):
+                print("  bpl END"+str(labelCounter))
 
 
 class Elsee:
@@ -133,34 +136,67 @@ class Whilee:
 
             
 
-def createStateTable(code):
-    table = {}
+
+def getBlock(blocks,index):
+    for i in blocks:
+        if(i[0] == index):
+            return i
+
+
+
+def generateThreeAddresCode(code):
+    tac = []
+    ready = []
+    labelCounter = 0
+    for i in range(len(code)):
+        print(i,code[i])
+
     stack = []
     blocksLimits = []
-    label = 0
-    ifCounter = []
     for l in range(len(code)):
         if('{' in code[l]):
             stack.append(l)
         elif('}' in code[l]):
             blocksLimits.append([stack.pop(),l])
-    blocksLimits = sorted(blocksLimits, key=lambda x: x[0])
-    for i in blocksLimits:
-        if("if" in code[i[0]]):
-            table["IF"+str(label)] = Iff.getTable(code[i[0]][1],i[0],i[1])
-            if("else" in code[i[1]+1]):
-                ifCounter.append(label)
-            label+=1
-        elif("else" in code[i[0]]):
-            table["ELSE"+str(ifCounter[-1])] = Elsee.getTable("IF"+str(ifCounter[-1]),i[0],i[1])
-            ifCounter.pop()
-        elif("while" in code[i[0]]):
-            table["WHILE" + str(label)] = Whilee.getTable(code[i[0]][1],i[0],i[1])
 
-            
-    return table
+    print(blocksLimits)
+    print("---------")
     
     
+    for i in range(len(code)):
+        if(i not in ready):
+            if("if" in code[i]):
+                ifBlock = getBlock(blocksLimits,i)
+                if("else" in code[ifBlock[1]+1]):
+
+                    tac.append(code[ifBlock[0]][:2] + ["go to","L"+str(labelCounter)+':'])
+                    elseBlock = getBlock(blocksLimits,ifBlock[1]+1)
+
+                    for l in range(elseBlock[0]+1,elseBlock[1]):
+                        tac.append(code[l])
+                        ready.append(l)
+                    tac.append(["go to","L"+str(labelCounter+1)])
+                    ready.append(elseBlock[0])
+                    ready.append(elseBlock[1])
+
+                    tac.append(["L"+str(labelCounter)+':'])
+                    for l in range(ifBlock[0]+1,ifBlock[1]):
+                        tac.append(code[l])
+                        ready.append(l)
+                    ready.append(ifBlock[0])
+                    ready.append(ifBlock[1])
+                    labelCounter+=1
+
+                    tac.append(["L"+str(labelCounter)+':'])
+                    labelCounter+=1
+                else:
+                    pass
+            if i not in ready:
+                tac.append(code[i])
+    
+    for i in tac:
+        print(i)
+
 
 def createSymbolTable(code):
     global TYPES
@@ -196,51 +232,43 @@ def readFile(filePath):
     program = code.read()
     program = program.split('\n')
     code.close()
+    out = []
     for x in range(len(program)):
-        reservFlag = not(any(check in program[x] for check in RESERV_WORDS))
-        if reservFlag:
-            program[x] = re.split('([^a-zA-Z0-9])',program[x])
-            while(' ' in program[x]):
-                blank = program[x].index(' ')
-                program[x].pop(blank)
-            while('' in program[x]):
-                blank = program[x].index('')
-                program[x].pop(blank)
-        else:
-            program[x] = handleKeyWords(program[x])
-    return program
+        if program[x]:
+            reservFlag = not(any(check in program[x] for check in RESERV_WORDS))
+            if reservFlag:
+                program[x] = re.split('([^a-zA-Z0-9])',program[x])
+                while(' ' in program[x]):
+                    blank = program[x].index(' ')
+                    program[x].pop(blank)
+                while('' in program[x]):
+                    blank = program[x].index('')
+                    program[x].pop(blank)
+            else:
+                program[x] = handleKeyWords(program[x])
+            out.append(program[x])
+    
+    return out
 
-def parseCode(code,tableS,tableC):
-    labelCounter = 0
-    for l in code:
-        if('=' in l):
-            Equal.getAsm(tableS,l)
-
-        elif("if" in l):
-            Iff.getAsm(code,tableS,tableC,labelCounter)
-            labelCounter+=1
-            
-        elif("else" in l):
-            print("Aqui va un Else")
+def parseCode(code,symbols):
+    pass
+        
         
 
 
 
-def assemblyCode():
-    program = readFile("foo.miau")
+def assemblyCode(path):
+    program = readFile(path)    
     symTable = createSymbolTable(program)
-    stateTable = createStateTable(program)
-    parseCode(program,symTable,stateTable)
-
-    for i in stateTable:
-        print(i,stateTable[i])
+    intermidiateCode = generateThreeAddresCode(program)
+    parseCode(program,symTable)
 
 
 
 
 if __name__ == "__main__":
     #TODO #2 Create a proper command line for the compiler
-    assemblyCode()
+    assemblyCode("foo.miau")
 
 
 

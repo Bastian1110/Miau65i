@@ -8,7 +8,7 @@ import (
 
 func main() {
 	fmt.Println("Welcome to Miau65i! ")
-	lib.Buffer = "miau"
+	lib.Buffer = ""
 	lib.Lexer()
 	lib.Test()
 }

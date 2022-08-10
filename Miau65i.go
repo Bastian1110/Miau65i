@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	fmt.Println("Welcome to Miau65i! ")
-	lib.Buffer = ""
+	fmt.Println("Welcome to Miau65i! 🧶")
 	lib.Lexer()
-	lib.Test()
+	lib.ReadFile("./test.miau")
+
 }

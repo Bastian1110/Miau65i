@@ -6,12 +6,8 @@ import (
 	"strings"
 )
 
-var Buffer string
-
+var buffer string
 var regex *regexp.Regexp
-
-//var space = regexp.Compile(`\s`)
-var pos = 0
 
 func Lexer() {
 	var rules = make(map[string]string)
@@ -25,26 +21,40 @@ func Lexer() {
 	regex = regexp.MustCompile(strings.Join(regexParts, "|"))
 }
 
-func getToken() string {
-	match := regex.FindStringSubmatch(Buffer)
-	index := regex.FindStringIndex(Buffer)
-	Buffer = Buffer[index[1]:]
+func getToken() []string {
+	var token [2]string
+	match := regex.FindStringSubmatch(buffer)
+	if len(match[0]) == 0 {
+		token[0] = "err"
+		return token[:]
+	}
+	index := regex.FindStringIndex(buffer)
+	buffer = buffer[index[1]:]
 	result := make(map[string]string)
 	tokenNames := regex.SubexpNames()
 	for i, name := range tokenNames {
 		if i != 0 && name != "" {
 			result[name] = match[i]
 			if result[name] != "" {
-				return ("Type : " + name + " Token : " + result[name])
+				token[0] = name
+				token[1] = result[name]
+				return token[:]
 			}
 		}
 	}
-	return ""
+	token[0] = "err"
+	return token[:]
 }
 
-func Test() {
-	Buffer = "abc1.2aaa "
-	fmt.Println(getToken())
-	fmt.Println(getToken())
-	fmt.Println(getToken())
+func Tokenize(input string) [][]string {
+	var result [][]string
+	buffer = input
+	for len(buffer) > 0 {
+		token := getToken()
+		if token[0] == "err" {
+			fmt.Println("Failed tokenize 😐")
+		}
+		result = append(result, token)
+	}
+	return result
 }

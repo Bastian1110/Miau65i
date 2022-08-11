@@ -15,6 +15,11 @@ func Lexer() {
 	rules["float"] = "([0-9]*[.])+[0-9]+"
 	rules["int"] = "[0-9]+"
 	rules["var"] = "[a-zA-Z_]+"
+	rules["ass"] = "\x3D"
+	//TODO : Add fix for + regex
+	rules["sub"] = "\x2D"
+	rules["okey"] = "\x7B"
+	rules["ckey"] = "\x7D"
 	for token, rule := range rules {
 		regexParts = append(regexParts, "(?P<"+token+">"+rule+")")
 	}

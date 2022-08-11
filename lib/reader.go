@@ -6,7 +6,8 @@ import (
 	"os"
 )
 
-func ReadFile(path string) {
+func ReadFile(path string) []string {
+	var res []string
 	if path[len(path)-5:] != ".miau" {
 		fmt.Println("Expecting a miau file ... 🥺")
 	}
@@ -18,7 +19,7 @@ func ReadFile(path string) {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+		res = append(res, scanner.Text())
 	}
-
+	return res
 }

@@ -9,6 +9,9 @@ import (
 func main() {
 	fmt.Println("Welcome to Miau65i! 🧶")
 	lib.Lexer()
-	lib.ReadFile("./test.miau")
+	lines := lib.ReadFile("./test.miau")
+	for _, line := range lines {
+		fmt.Println(lib.Tokenize(line))
+	}
 
 }

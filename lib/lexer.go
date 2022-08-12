@@ -14,12 +14,15 @@ func Lexer() {
 	var regexParts []string
 	rules["float"] = "([0-9]*[.])+[0-9]+"
 	rules["int"] = "[0-9]+"
+	rules["cond"] = "\bif|\belse" //Fix regex for conditionals
 	rules["var"] = "[a-zA-Z_]+"
-	rules["ass"] = "\x3D"
-	//TODO : Add fix for + regex
-	rules["sub"] = "\x2D"
-	rules["okey"] = "\x7B"
-	rules["ckey"] = "\x7D"
+	rules["ass"] = "\\="
+	rules["add"] = "\\+"
+	rules["sub"] = "\\-"
+	rules["okey"] = "\\{"
+	rules["ckey"] = "\\}"
+	rules["opar"] = "\\("
+	rules["cpar"] = "\\)"
 	for token, rule := range rules {
 		regexParts = append(regexParts, "(?P<"+token+">"+rule+")")
 	}

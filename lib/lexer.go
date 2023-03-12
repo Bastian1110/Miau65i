@@ -12,13 +12,15 @@ var regex *regexp.Regexp
 func Lexer() {
 	var rules = make(map[string]string)
 	var regexParts []string
+	rules["con"] = "\b(?:if)" //Fix regex for conditionals
 	rules["float"] = "([0-9]*[.])+[0-9]+"
 	rules["int"] = "[0-9]+"
-	rules["cond"] = "\bif|\belse" //Fix regex for conditionals
 	rules["var"] = "[a-zA-Z_]+"
 	rules["ass"] = "\\="
 	rules["add"] = "\\+"
 	rules["sub"] = "\\-"
+	rules["grt"] = "\\>"
+	rules["lrt"] = "\\<"
 	rules["okey"] = "\\{"
 	rules["ckey"] = "\\}"
 	rules["opar"] = "\\("

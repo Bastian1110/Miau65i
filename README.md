@@ -12,7 +12,7 @@ will compile fot the 65C02 legacy processor, more precisely for the Ben Eater pr
 
 ## Objectives
 
-1. Typed language
+1. Simple, BASIC-like language
 2. Support functions for 65C22
 3. Support functions for LCD Display
 4. Implement an standard libary
@@ -43,7 +43,32 @@ I'm currentl working in the defintion of all the rules, alog the way I build de 
 
 ## Parser
 
-To implement the parser, I decided I will use the Recursive Descent Method, with a Context Free Grammar that will prove if all the lines in the source code are valid for the code generator
+To implement the parser, I decided I will use the Recursive Descent Method, with a Context Free Grammar that will prove if all the lines in the source code are valid for the code generator, here is the BNF notation of the grammar.
+
+```
+program -> statement_list
+
+statement_list -> statement statement_list | ε
+
+statement -> assignment_statement | loop_statement | if_statement | print_statement
+
+assignment_statement -> var "=" expression
+
+expression -> term (("+" | "-") term)*
+
+term -> factor (("*" | "/") factor)*
+
+factor -> number | var
+
+loop_statement -> label statement_list "goto" label
+
+if_statement -> "if" "(" expression ")" "{" statement_list "}"
+
+print_statement -> "print" var
+
+label -> LABEL // Where LABEL is any token classified as a label by the lexer
+
+```
 
 ## Installation
 

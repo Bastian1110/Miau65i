@@ -27,15 +27,21 @@ normally in a compiler. This to demonstrate the way a compiler work (and a littl
 For the implementation of the lexer, I decided that I didnt want to use additional libaries, so I implemented a solution that uses the regexp Go libary to tokenize a string, this given the following rules :
 
 ```
-	rules["float"] = "([0-9]*[.])+[0-9]+"
-	rules["int"] = "[0-9]+"
-	rules["var"] = "[a-zA-Z_]+"
-	rules["ass"] = "\\="
-	rules["add"] = "\\+"
-	rules["sub"] = "\\-"
-	rules["okey"] = "\\{"
-	rules["ckey"] = "\\}"
-	rules["opar"] = "\\("
+	rules["int"] = `\b[0-9]+\b`              // Integers
+	rules["var"] = `\b[a-z_][a-zA-Z_0-9]*\b` // Variables (identifiers, lowercase to differentiate from labels)
+	rules["label"] = `\b[A-Z][A-Z_0-9]*\b`   // Labels (uppercase identifiers)
+	rules["ass"] = `=`                       // Assignment
+	rules["add"] = `\+`                      // Addition
+	rules["sub"] = `\-`                      // Subtraction (if needed)
+	rules["grt"] = `>`                       // Greater than
+	rules["lrt"] = `<`                       // Less than
+	rules["opar"] = `\(`                     // Open parenthesis
+	rules["cpar"] = `\)`                     // Close parenthesis
+	rules["okey"] = `\{`                     // Open curly brace
+	rules["ckey"] = `\}`                     // Close curly brace
+	rules["if"] = `\bif\b`                   // if condition
+	rules["goto"] = `\bgoto\b`               // goto keyword
+	rules["print"] = `\bprint\b`             // print function
 
 ```
 

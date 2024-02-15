@@ -48,18 +48,20 @@ func NewParser(tokens []Token) *Parser {
 
 func (p *Parser) ParseProgram() *ASTNode {
 	node := &ASTNode{Type: "program", Children: []*ASTNode{}}
-	max := 0
-	for !p.atEnd() && max < 5 {
+	for !p.atEnd() {
 		node.Children = append(node.Children, p.parseStatement())
-		max++
 	}
 	return node
 }
 
 func (p *Parser) parseStatement() *ASTNode {
-	if p.match(TOKEN_VAR) {
+	switch {
+	case p.match(TOKEN_VAR):
 		p.consume("Expecting variable name.", TOKEN_VAR)
 		return p.parseAssignmentStatement()
+	case p.match(TOKEN_IF):
+		p.consume("Expecting if tag.", TOKEN_IF)
+		return p.parseIfStatement()
 	}
 	return nil
 }
@@ -72,11 +74,32 @@ func (p *Parser) parseAssignmentStatement() *ASTNode {
 }
 
 func (p *Parser) parseExpression() *ASTNode {
+	return p.parseBooleanExpression()
+}
+
+func (p *Parser) parseBooleanExpression() *ASTNode {
+	expr := p.parseArithmeticExpression()
+
+	if p.match(TOKEN_GRT, TOKEN_LRT) {
+		operator := p.tokens[p.current].Type
+		p.consume("Expecting comparison operator.", TOKEN_GRT, TOKEN_LRT)
+		right := p.parseArithmeticExpression()
+		expr = &ASTNode{
+			Type:     "boolean_expr",
+			Value:    operator,
+			Children: []*ASTNode{expr, right},
+		}
+	}
+
+	return expr
+}
+
+func (p *Parser) parseArithmeticExpression() *ASTNode {
 	node := p.parseTerm()
 
 	for !p.atEnd() && (p.match(TOKEN_ADD, TOKEN_SUB)) {
-		p.consume("Expecting arithmetic name.", TOKEN_ADD, TOKEN_SUB)
-		operator := p.previous().Type
+		operator := p.tokens[p.current].Type
+		p.consume("Expecting arithmetic operator.", TOKEN_ADD, TOKEN_SUB)
 		right := p.parseTerm()
 		node = &ASTNode{
 			Type:     "binary_expr",
@@ -100,8 +123,28 @@ func (p *Parser) parseTerm() *ASTNode {
 	return nil
 }
 
+func (p *Parser) parseIfStatement() *ASTNode {
+	p.consume("Expect '(' after 'if'.", TOKEN_OPAR)
+	condition := p.parseExpression()
+	p.consume("Expect ')' after if condition.", TOKEN_CPAR)
+
+	p.consume("Expect '{' before if body.", TOKEN_OKEY)
+	body := p.parseBlock()
+	p.consume("Expect '}' after if body.", TOKEN_CKEY)
+
+	return &ASTNode{Type: "if_statement", Children: []*ASTNode{condition, body}}
+}
+
+func (p *Parser) parseBlock() *ASTNode {
+	block := &ASTNode{Type: "block", Children: []*ASTNode{}}
+	for !p.atEnd() && !p.match(TOKEN_CKEY) {
+		block.Children = append(block.Children, p.parseStatement())
+	}
+	return block
+}
+
 func (p *Parser) match(types ...string) bool {
-	fmt.Println("Current : ", p.current, p.tokens[p.current], " Matching : ", types)
+	//fmt.Println("Current : ", p.current, p.tokens[p.current], " Matching : ", types)
 	if p.atEnd() {
 		return false
 	}
@@ -114,7 +157,7 @@ func (p *Parser) match(types ...string) bool {
 }
 
 func (p *Parser) consume(errorMessage string, expectedTypes ...string) Token {
-	fmt.Println("Parsing Token :", p.tokens[p.current], " Expected Type : ", expectedTypes)
+	//fmt.Println("Parsing Token :", p.tokens[p.current], " Expected Type : ", expectedTypes)
 	for _, typ := range expectedTypes {
 		if !p.atEnd() && p.tokens[p.current].Type == typ {
 			token := p.tokens[p.current]

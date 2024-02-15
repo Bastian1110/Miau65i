@@ -11,7 +11,12 @@ func main() {
 	lib.Lexer()
 	lines := lib.ReadFile("./test.miau")
 	for _, line := range lines {
-		fmt.Println(lib.Tokenize(line))
+		tokens := lib.Tokenize(line)
+		fmt.Println("Tokens : ", tokens)
+		parser := lib.NewParser(tokens)
+		ast := parser.ParseProgram()
+		fmt.Println("AST :", ast)
+		ast.Show(0)
 	}
 
 }

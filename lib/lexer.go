@@ -9,6 +9,11 @@ import (
 var buffer string
 var regex *regexp.Regexp
 
+type Token struct {
+	Type  string
+	Value string
+}
+
 func Lexer() {
 	var rules = make(map[string]string)
 	var regexParts []string
@@ -41,49 +46,43 @@ func Lexer() {
 	regex = regexp.MustCompile(strings.Join(regexParts, "|"))
 }
 
-func getToken() []string {
-	var token [2]string
+func getToken() Token {
 	buffer = strings.TrimSpace(buffer)
 	if buffer == "" {
-		return []string{"eof", ""}
+		return Token{Type: "eof", Value: ""}
 	}
 	match := regex.FindStringSubmatch(buffer)
 	if len(match) == 0 {
 		fmt.Println("No match found") // Debug print
-		token[0] = "err"
-		return token[:]
+		return Token{Type: "err", Value: ""}
 	}
 	index := regex.FindStringIndex(buffer)
 	if len(index) < 2 {
-		token[0] = "err"
-		return token[:]
+		return Token{Type: "err", Value: ""}
 	}
 	buffer = buffer[index[1]:]
-	result := make(map[string]string)
 	tokenNames := regex.SubexpNames()
 	for i, name := range tokenNames {
 		if i != 0 && name != "" && match[i] != "" {
-			result[name] = match[i]
-			token[0] = name
-			token[1] = result[name]
-			return token[:]
+			return Token{Type: name, Value: match[i]}
 		}
 	}
-	token[0] = "err"
-	return token[:]
+	return Token{Type: "err", Value: ""}
 }
 
-func Tokenize(input string) [][]string {
-	var result [][]string
+func Tokenize(input string) []Token {
+	var tokens []Token
 	buffer = input
-	max := 0
-	for len(buffer) > 0 && max < 10 {
+	for len(buffer) > 0 {
 		token := getToken()
-		if token[0] == "err" {
+		if token.Type == "err" {
 			fmt.Println("Failed tokenize 😐")
+			break // Exit if there's an error to avoid infinite loop
+		} else if token.Type != "eof" {
+			tokens = append(tokens, token)
+		} else {
+			break // Exit if we reach the end of file
 		}
-		result = append(result, token)
-		max++
 	}
-	return result
+	return tokens
 }

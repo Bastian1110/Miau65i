@@ -18,5 +18,7 @@ func main() {
 	ast := parser.ParseProgram()
 	fmt.Println("AST :", ast)
 	ast.Show(0)
+	sa := lib.NewSymbolTable()
+	ast.AnalyzeSemantics(sa)
 
 }

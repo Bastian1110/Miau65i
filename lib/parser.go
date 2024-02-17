@@ -62,6 +62,12 @@ func (p *Parser) parseStatement() *ASTNode {
 	case p.match(TOKEN_IF):
 		p.consume("Expecting if tag.", TOKEN_IF)
 		return p.parseIfStatement()
+	case p.match(TOKEN_PRINT):
+		return p.parsePrintStatement()
+	case p.match(TOKEN_GOTO):
+		return p.parseGotoStatement()
+	case p.match(TOKEN_LABEL):
+		return p.parseLabelStatement()
 	}
 	return nil
 }
@@ -118,6 +124,9 @@ func (p *Parser) parseTerm() *ASTNode {
 	} else if p.match(TOKEN_VAR) {
 		p.consume("Expecting var", TOKEN_VAR)
 		return &ASTNode{Type: "variable", Value: p.previous().Value}
+	} else if p.match(TOKEN_LABEL) {
+		p.consume("Expecting LABEL", TOKEN_LABEL)
+		return &ASTNode{Type: "label", Value: p.previous().Value}
 	}
 
 	return nil
@@ -143,6 +152,27 @@ func (p *Parser) parseBlock() *ASTNode {
 	return block
 }
 
+func (p *Parser) parsePrintStatement() *ASTNode {
+	p.consume("Expecting print statement.", TOKEN_PRINT)
+	expr := p.parseExpression()
+	return &ASTNode{Type: "print", Children: []*ASTNode{expr}}
+}
+
+func (p *Parser) parseGotoStatement() *ASTNode {
+	p.consume("Expecting GOTO statement.", TOKEN_GOTO)
+	expr := p.parseTerm()
+	return &ASTNode{Type: "goto", Children: []*ASTNode{expr}}
+}
+
+func (p *Parser) parseLabelStatement() *ASTNode {
+	p.consume("Expecting LABEL name.", TOKEN_LABEL)
+	node := &ASTNode{Type: "block", Value: p.previous().Value, Children: []*ASTNode{}}
+	for !p.atEnd() {
+		node.Children = append(node.Children, p.parseStatement())
+	}
+	return node
+}
+
 func (p *Parser) match(types ...string) bool {
 	//fmt.Println("Current : ", p.current, p.tokens[p.current], " Matching : ", types)
 	if p.atEnd() {
@@ -157,7 +187,6 @@ func (p *Parser) match(types ...string) bool {
 }
 
 func (p *Parser) consume(errorMessage string, expectedTypes ...string) Token {
-	//fmt.Println("Parsing Token :", p.tokens[p.current], " Expected Type : ", expectedTypes)
 	for _, typ := range expectedTypes {
 		if !p.atEnd() && p.tokens[p.current].Type == typ {
 			token := p.tokens[p.current]

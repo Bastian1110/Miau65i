@@ -20,5 +20,6 @@ func main() {
 	ast.Show(0)
 	sa := lib.NewSymbolTable()
 	ast.AnalyzeSemantics(sa)
-
+	mt := lib.NewMeMemoryTable()
+	fmt.Println(ast.GenerateAssembly(mt))
 }

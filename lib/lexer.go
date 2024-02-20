@@ -53,7 +53,7 @@ func getToken() Token {
 	}
 	match := regex.FindStringSubmatch(buffer)
 	if len(match) == 0 {
-		fmt.Println("No match found") // Debug print
+		fmt.Println("No match found")
 		return Token{Type: "err", Value: ""}
 	}
 	index := regex.FindStringIndex(buffer)
@@ -77,11 +77,11 @@ func Tokenize(input string) []Token {
 		token := getToken()
 		if token.Type == "err" {
 			fmt.Println("Failed tokenize 😐")
-			break // Exit if there's an error to avoid infinite loop
+			break
 		} else if token.Type != "eof" {
 			tokens = append(tokens, token)
 		} else {
-			break // Exit if we reach the end of file
+			break
 		}
 	}
 	return tokens

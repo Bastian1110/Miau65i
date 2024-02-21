@@ -9,8 +9,9 @@ func decimalToHexStr(number int) string {
 }
 
 type MemoryTable struct {
-	cursor    int
-	variables map[string]string
+	cursor               int
+	variables            map[string]string
+	conditionalIdCounter int
 }
 
 func NewMeMemoryTable() *MemoryTable {
@@ -31,10 +32,15 @@ func (mt *MemoryTable) RetriveMem(varName string) (string, bool) {
 	return "", false
 }
 
+func (mt *MemoryTable) RegisterConditional() string {
+	mt.conditionalIdCounter++
+	return fmt.Sprintf("%02x", mt.conditionalIdCounter)
+}
+
 func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 	switch node.Type {
 	case "program":
-		program := "PROGRAM:\n"
+		program := "  .org $8000\nPROGRAM:\n"
 		for _, child := range node.Children {
 			program += child.GenerateAssembly(mt)
 		}
@@ -45,7 +51,7 @@ func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 			memAddress = mt.Malloc(node.Value)
 		}
 		rhs := node.Children[0].GenerateAssembly(mt)
-		return fmt.Sprintf("LDA %sSTA $%s\n\n", rhs, memAddress)
+		return fmt.Sprintf("  lda %s  sta $%s\n\n", rhs, memAddress)
 
 	case "binary_expr":
 		ass := ""
@@ -54,10 +60,10 @@ func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 		ass += lhs
 
 		rhs := node.Children[1].GenerateAssembly(mt)
-		if node.Value == "add" {
-			ass += fmt.Sprintf("CLC\nADC %s", rhs)
+		if node.Value == "  add" {
+			ass += fmt.Sprintf("  clc\n  adc %s", rhs)
 		} else {
-			ass += fmt.Sprintf("CLC\nSBC %s", rhs)
+			ass += fmt.Sprintf("  clc\n  sbc %s", rhs)
 		}
 		return ass
 	case "block":
@@ -66,8 +72,37 @@ func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 			program += child.GenerateAssembly(mt)
 		}
 		return program
+	case "if_statement":
+		ass := ""
+		ass += node.Children[0].GenerateAssembly(mt)
+		conditionalId := mt.RegisterConditional()
+		blockLabel := fmt.Sprintf("IF_%s", conditionalId)
+
+		ass += fmt.Sprintf("%s\n", blockLabel)
+
+		for _, child := range node.Children[1].Children {
+			ass += child.GenerateAssembly(mt)
+		}
+		ass += fmt.Sprintf("%s:\n", blockLabel)
+		return ass
+	case "boolean_expr":
+		ass := ""
+		lhs := node.Children[0].GenerateAssembly(mt)
+		rhs := node.Children[1].GenerateAssembly(mt)
+		ass += fmt.Sprintf("  lda %s", lhs)
+		ass += fmt.Sprintf("  cmp %s\n", rhs)
+		switch node.Value {
+		case "lrt":
+			ass += "  bmi "
+		case "grt":
+			ass += "  bpl "
+		case "eql":
+			ass += "  bmi " // TODO : Implement the ==
+		}
+		return ass
+	case "print":
 	case "goto":
-		return fmt.Sprintf("JMP %s\n", node.Children[0].Value)
+		return fmt.Sprintf("  jmp %s\n", node.Children[0].Value)
 	case "variable":
 		memAddress, _ := mt.RetriveMem(node.Value)
 		return fmt.Sprintf("$%s\n", memAddress)

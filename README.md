@@ -76,6 +76,44 @@ label -> LABEL // Where LABEL is any token classified as a label by the lexer
 
 ```
 
+## Example 
+
+This is how in C++ you would calculate de [Fibonnaci Sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence) that are smaller than 255 :
+
+```
+#include <iostream>
+
+using namespace std;
+
+int main(){
+    int x = 0;
+    int y = 1;
+    int z = 0;
+    while(x < 255){
+        z = x + y;
+        x = y;
+        y = z;
+        cout << x << "\n";
+    }
+}
+```
+
+This is a basic way to do it using Miau65i :
+
+```
+x = 0 
+y = 1
+z = 0
+LOOP 
+z = x + y
+x = y
+y = z 
+if (x < 255){
+  print x 
+  goto LOOP
+}
+```
+
 ## Installation
 
 Clone this repository on your computer

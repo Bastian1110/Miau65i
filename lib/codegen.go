@@ -20,7 +20,7 @@ func NewMeMemoryTable() *MemoryTable {
 
 func (mt *MemoryTable) Malloc(varName string) string {
 	hexMem := decimalToHexStr(mt.cursor)
-	mt.cursor++
+	mt.cursor += 2
 	mt.variables[varName] = hexMem
 	return hexMem
 }
@@ -40,7 +40,7 @@ func (mt *MemoryTable) RegisterConditional() string {
 func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 	switch node.Type {
 	case "program":
-		program := "  .org $8000\nPROGRAM:\n"
+		program := "\nPROGRAM:\n"
 		for _, child := range node.Children {
 			program += child.GenerateAssembly(mt)
 		}
@@ -51,7 +51,7 @@ func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 			memAddress = mt.Malloc(node.Value)
 		}
 		rhs := node.Children[0].GenerateAssembly(mt)
-		return fmt.Sprintf("  lda %s  sta $%s\n\n", rhs, memAddress)
+		return fmt.Sprintf("  lda %s\n  sta $%s\n\n", rhs, memAddress)
 
 	case "binary_expr":
 		ass := ""
@@ -60,10 +60,10 @@ func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 		ass += lhs
 
 		rhs := node.Children[1].GenerateAssembly(mt)
-		if node.Value == "  add" {
-			ass += fmt.Sprintf("  clc\n  adc %s", rhs)
+		if node.Value == "add" {
+			ass += fmt.Sprintf("\n  clc\n  adc %s", rhs)
 		} else {
-			ass += fmt.Sprintf("  clc\n  sbc %s", rhs)
+			ass += fmt.Sprintf("\n  clc\n  sbc %s", rhs)
 		}
 		return ass
 	case "block":
@@ -78,7 +78,7 @@ func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 		conditionalId := mt.RegisterConditional()
 		blockLabel := fmt.Sprintf("IF_%s", conditionalId)
 
-		ass += fmt.Sprintf("%s\n", blockLabel)
+		ass += fmt.Sprintf("%s\n\n", blockLabel)
 
 		for _, child := range node.Children[1].Children {
 			ass += child.GenerateAssembly(mt)
@@ -89,7 +89,7 @@ func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 		ass := ""
 		lhs := node.Children[0].GenerateAssembly(mt)
 		rhs := node.Children[1].GenerateAssembly(mt)
-		ass += fmt.Sprintf("  lda %s", lhs)
+		ass += fmt.Sprintf("  lda %s\n", lhs)
 		ass += fmt.Sprintf("  cmp %s\n", rhs)
 		switch node.Value {
 		case "lrt":
@@ -101,13 +101,17 @@ func (node *ASTNode) GenerateAssembly(mt *MemoryTable) string {
 		}
 		return ass
 	case "print":
+		rhs := node.Children[0].GenerateAssembly(mt)
+		ass := fmt.Sprintf("  lda %s\n  sta value\n  lda %s + 1\n  sta value + 1\n  jsr printNumber\n  jsr delay\n\n", rhs, rhs)
+		return ass
+
 	case "goto":
-		return fmt.Sprintf("  jmp %s\n", node.Children[0].Value)
+		return fmt.Sprintf("  jmp %s\n\n", node.Children[0].Value)
 	case "variable":
 		memAddress, _ := mt.RetriveMem(node.Value)
-		return fmt.Sprintf("$%s\n", memAddress)
+		return fmt.Sprintf("$%s", memAddress)
 	case "number":
-		return fmt.Sprintf("#%s\n", node.Value)
+		return fmt.Sprintf("#%s", node.Value)
 	}
 	return ""
 }

@@ -1,18 +1,42 @@
+package lib
+
+import (
+	"fmt"
+	"os"
+)
+
+func WriteAssemblyToFile(asm string, fileName string) {
+	file, err := os.Create(fileName)
+	if err != nil {
+		fmt.Printf("There was a problem when writing assembly to file : %s", fileName)
+		fmt.Println("Exited before compilation.")
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	err = os.WriteFile(fileName, []byte(asm), 0644)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+
+	fmt.Println("File written successfully.")
+}
+
+func CreateAssemblyTemplate(asm string) string {
+	templateFirst := `; Generated 
 PORTB = $6000
 PORTA = $6001
 DDRB = $6002
 DDRA = $6003
 
 message = $0001
-stringPointer = $007f
-
 value = $0200
 mod10 = $0202
 
 E  = %10000000
 RW = %01000000
 RS = %00100000
-
 
   .org $8000
 
@@ -30,23 +54,8 @@ reset:
   jsr lcd_instruction
   lda #$00000001 ; Clear display
   jsr lcd_instruction
-
-  jmp loop
-
-string: .asciiz "Running Program .."
-printString:
-  lda #$00000001 ; Clear display
-  jsr lcd_instruction
-  ldx #0
-printS:
-  lda string,x
-  beq return_str
-  jsr print_char
-  inx
-  jmp printS
-return_str:
-  rts
-
+	`
+	templateLast := `  jmp loop
 
 printNumber:
   lda #$00000001 ; Clear display
@@ -94,10 +103,10 @@ print:
   jmp print
 return_bin:
   rts
-
+	
 loop:
   jmp loop
-
+	
 push_char:
   pha
   ldy #0
@@ -113,7 +122,7 @@ char_loop:
   pla
   sta message,y
   rts
-
+	
 lcd_wait:
   pha
   lda #%00000000  ; Port B is input
@@ -132,7 +141,7 @@ lcdbusy:
   sta DDRB
   pla
   rts
-
+	
 lcd_instruction:
   jsr lcd_wait
   sta PORTB
@@ -143,7 +152,7 @@ lcd_instruction:
   lda #0         ; Clear RS/RW/E bits
   sta PORTA
   rts
-
+	
 print_char:
   jsr lcd_wait
   sta PORTB
@@ -154,7 +163,7 @@ print_char:
   lda #RS         ; Clear E bits
   sta PORTA
   rts
-
+	
 delay:
   ldy #$ff
   ldx #$ff
@@ -171,8 +180,12 @@ delayT:
   dey 
   bne delayT
   rts
-  
-
+	  
+	
   .org $fffc
   .word reset
   .word $0000
+	`
+
+	return templateFirst + asm + templateLast
+}

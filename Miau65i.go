@@ -21,5 +21,7 @@ func main() {
 	sa := lib.NewSymbolTable()
 	ast.AnalyzeSemantics(sa)
 	mt := lib.NewMeMemoryTable()
-	fmt.Println(ast.GenerateAssembly(mt))
+	asm := ast.GenerateAssembly(mt)
+	file := lib.CreateAssemblyTemplate(asm)
+	lib.WriteAssemblyToFile(file, "a.s")
 }
